@@ -1,0 +1,137 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: "class",
+  content: [
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./lib/**/*.{ts,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        purple: {
+          50: "var(--p-50)",
+          100: "var(--p-100)",
+          200: "var(--p-200)",
+          300: "var(--p-300)",
+          400: "var(--p-400)",
+          500: "var(--p-500)",
+          600: "var(--p-600)",
+          700: "var(--p-700)",
+          800: "var(--p-800)",
+          900: "var(--p-900)",
+        },
+        emerald: {
+          50: "var(--g-50)",
+          100: "var(--g-100)",
+          200: "var(--g-200)",
+          300: "var(--g-300)",
+          400: "var(--g-400)",
+          500: "var(--g-500)",
+          600: "var(--g-600)",
+          700: "var(--g-700)",
+          800: "var(--g-800)",
+          900: "var(--g-900)",
+        },
+        amber: {
+          50: "var(--a-50)",
+          100: "var(--a-100)",
+          200: "var(--a-200)",
+          300: "var(--a-300)",
+          400: "var(--a-400)",
+          500: "var(--a-500)",
+          600: "var(--a-600)",
+          700: "var(--a-700)",
+          800: "var(--a-800)",
+          900: "var(--a-900)",
+        },
+        coral: {
+          50: "var(--c-50)",
+          100: "var(--c-100)",
+          200: "var(--c-200)",
+          300: "var(--c-200)", // fallback as c-300 was missing in tokens
+          400: "var(--c-400)",
+          500: "var(--c-500)",
+          600: "var(--c-600)",
+          700: "var(--c-800)", // fallback
+          800: "var(--c-800)",
+          900: "var(--c-800)", // fallback
+        },
+        neutral: {
+          50: "var(--n-50)",
+          100: "var(--n-100)",
+          150: "var(--n-150)",
+          200: "var(--n-200)",
+          300: "var(--n-300)",
+          400: "var(--n-400)",
+          500: "var(--n-500)",
+          600: "var(--n-600)",
+          700: "var(--n-700)",
+          800: "var(--n-800)",
+          900: "var(--n-900)",
+        },
+        brand: {
+          50: "var(--brand-50)",
+          100: "var(--brand-100)",
+          200: "var(--brand-200)",
+          300: "var(--brand-300)",
+          400: "var(--brand-400)",
+          500: "var(--brand-500)",
+          600: "var(--brand-600)",
+          700: "var(--brand-700)",
+          800: "var(--brand-800)",
+          900: "var(--brand-900)",
+        },
+        bg: "var(--bg)",
+        surface: {
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
+          3: "var(--surface-3)",
+        },
+        text: {
+          1: "var(--text-1)",
+          2: "var(--text-2)",
+          3: "var(--text-3)",
+          4: "var(--text-4)",
+        },
+      },
+      borderColor: {
+        DEFAULT: "var(--border)",
+        strong: "var(--border-strong)",
+      },
+      borderRadius: {
+        "r-1": "var(--r-1)",
+        "r-2": "var(--r-2)",
+        "r-3": "var(--r-3)",
+        "r-4": "var(--r-4)",
+        "r-5": "var(--r-5)",
+        "r-6": "var(--r-6)",
+      },
+      spacing: {
+        "sp-1": "var(--sp-1)",
+        "sp-2": "var(--sp-2)",
+        "sp-3": "var(--sp-3)",
+        "sp-4": "var(--sp-4)",
+        "sp-5": "var(--sp-5)",
+        "sp-6": "var(--sp-6)",
+        "sp-7": "var(--sp-7)",
+        "sp-8": "var(--sp-8)",
+        "sp-9": "var(--sp-9)",
+        "sp-10": "var(--sp-10)",
+      },
+      fontFamily: {
+        sans: ["var(--font-dm-sans)", "DM Sans", "sans-serif"],
+        mono: ["var(--font-jetbrains-mono)", "JetBrains Mono", "monospace"],
+      },
+      boxShadow: {
+        1: "var(--shadow-1)",
+        2: "var(--shadow-2)",
+        3: "var(--shadow-3)",
+      },
+    },
+  },
+  plugins: [],
+};
+
+export default config;

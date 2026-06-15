@@ -1,0 +1,440 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Pupil design tokens — light + dark + density */
+:root {
+  /* purple */
+  --p-50:#F5F3FF;  --p-100:#EDE9FE; --p-200:#DDD6FE; --p-300:#C4B5FD;
+  --p-400:#A78BFA; --p-500:#8B5CF6; --p-600:#7C3AED; --p-700:#6D28D9;
+  --p-800:#5B21B6; --p-900:#4C1D95;
+
+  /* emerald */
+  --g-50:#ECFDF5;  --g-100:#D1FAE5; --g-200:#A7F3D0; --g-300:#6EE7B7;
+  --g-400:#34D399; --g-500:#10B981; --g-600:#059669; --g-700:#047857;
+  --g-800:#065F46; --g-900:#064E3B;
+
+  /* amber */
+  --a-50:#FFFBEB;  --a-100:#FEF3C7; --a-200:#FDE68A; --a-300:#FCD34D;
+  --a-400:#FBBF24; --a-500:#F59E0B; --a-600:#D97706; --a-700:#B45309;
+  --a-800:#92400E; --a-900:#78350F;
+
+  /* coral */
+  --c-50:#FFF1F2; --c-100:#FFE4E6; --c-200:#FECDD3; --c-400:#FB7185;
+  --c-500:#F43F5E; --c-600:#E11D48; --c-800:#9F1239;
+
+  /* warm neutrals */
+  --n-50:#FAFAF9;  --n-100:#F5F5F4; --n-150:#EEEEEC; --n-200:#E7E5E4;
+  --n-300:#D6D3D1; --n-400:#A8A29E; --n-500:#78716C; --n-600:#57534E;
+  --n-700:#44403C; --n-800:#292524; --n-900:#1C1917;
+
+  /* brand role — overridden by tweaks */
+  --brand-50: var(--p-50);
+  --brand-100: var(--p-100);
+  --brand-200: var(--p-200);
+  --brand-300: var(--p-300);
+  --brand-400: var(--p-400);
+  --brand-500: #6C5CE7;
+  --brand-600: #5A4BD1;
+  --brand-700: var(--p-700);
+  --brand-800: var(--p-800);
+  --brand-900: var(--p-900);
+  --brand-shadow: 108,92,231;
+
+  /* surfaces — light defaults (Exact Notion) */
+  --bg: #ffffff;
+  --surface-1: #ffffff;
+  --surface-2: #f1f1ef;
+  --surface-3: #e9e9e6;
+  --sidebar: #f7f6f3;
+  --selected: rgba(55, 53, 47, 0.08);
+  --hover: rgba(55, 53, 47, 0.06);
+  --border: rgba(55, 53, 47, 0.09);
+  --border-strong: rgba(55, 53, 47, 0.16);
+  --text-1: #37352f;
+  --text-2: #5f5e5b;
+  --text-3: #9b9a97;
+  --text-4: #c1c0bd;
+
+  /* shadows */
+  --shadow-1: 0 1px 2px rgba(15,15,15,0.05), 0 1px 4px rgba(15,15,15,0.05);
+  --shadow-2: 0 4px 12px rgba(15,15,15,0.08), 0 1px 4px rgba(15,15,15,0.05);
+  --shadow-3: 0 8px 24px rgba(15,15,15,0.12), 0 2px 8px rgba(15,15,15,0.06);
+
+  /* density */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+  --sp-6:24px; --sp-7:32px; --sp-8:40px; --sp-9:48px; --sp-10:64px;
+
+  /* radii */
+  --r-1:4px; --r-2:6px; --r-3:8px; --r-4:12px; --r-5:16px; --r-6:20px;
+
+  /* type */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-serif: var(--font-source-serif), "Charter", "Iowan Old Style", "Source Serif Pro", Georgia, serif;
+}
+
+.dark {
+  /* surfaces — dark defaults (Exact Notion) */
+  --bg: #191919;
+  --surface-1: #202020;
+  --surface-2: #2a2a2a;
+  --surface-3: #373737;
+  --sidebar: #202020;
+  --selected: rgba(255, 255, 255, 0.08);
+  --hover: rgba(255, 255, 255, 0.055);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text-1: rgba(255, 255, 255, 0.9);
+  --text-2: rgba(255, 255, 255, 0.6);
+  --text-3: rgba(255, 255, 255, 0.4);
+  --text-4: rgba(255, 255, 255, 0.25);
+  /* boost brand for dark contrast */
+  --brand-500: #8B7EF0;
+  --brand-600: #6C5CE7;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* PDF export via the browser print dialog ("Save as PDF"). */
+@media print {
+  /* Keep backgrounds, captured frames, and code-block tints in the PDF. */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    user-select: text !important;
+  }
+  body {
+    background: var(--bg) !important;
+    color: var(--text-1) !important;
+  }
+  /* Hide the sidebar, floating action bars, and other UI controls */
+  aside,
+  .print\:hidden,
+  .fixed,
+  button,
+  .sticky,
+  nav,
+  header {
+    display: none !important;
+  }
+  /* Make the main layout fill the entire screen and scrollable/printable */
+  body:not(.print\:hidden),
+  html:not(.print\:hidden),
+  main:not(.print\:hidden),
+  #__next:not(.print\:hidden),
+  .flex-1:not(.print\:hidden),
+  .overflow-hidden:not(.print\:hidden),
+  .overflow-y-auto:not(.print\:hidden),
+  div[class*="h-screen"]:not(.print\:hidden) {
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  /* Remove bottom padding/margins on layout sections */
+  .pb-40,
+  .pb-32 {
+    padding-bottom: 0 !important;
+  }
+  /* Avoid splitting headings, pre blocks, and images across pages. */
+  h1, h2, h3, h4, h5, h6,
+  pre,
+  img,
+  .border-b {
+    break-inside: avoid;
+  }
+  
+  /* Ensure margins and paddings look clean in print */
+  article {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    max-w: 100% !important;
+  }
+}
+
+/* BlockNote transparency override and width optimization */
+.bn-container,
+.bn-editor,
+.bn-container[data-theme="light"],
+.bn-container[data-theme="dark"] {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+/* Ensure paragraph, list, and heading spacing look neat inside the Notion editor */
+.bn-container .bn-editor {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Reader-optimised typography for the notes editor.
+   Bigger body (16.5px / 1.78), DM Sans, and a more confident heading scale.
+   Inside `.notes-reader`, the body switches to a humanist serif for long-form
+   reading while headings keep DM Sans for a clean hierarchy. */
+.bn-container {
+  font-family: var(--font-sans) !important;
+  font-feature-settings: "kern", "liga", "calt", "ss01";
+}
+
+.notes-reader .bn-editor p,
+.notes-reader .bn-editor ul,
+.notes-reader .bn-editor ol,
+.notes-reader .bn-editor li,
+.notes-reader .bn-editor blockquote {
+  font-family: var(--font-serif) !important;
+  font-size: 17.5px !important;
+  line-height: 1.72 !important;
+  letter-spacing: 0 !important;
+}
+
+/* Pure-reader mode (chat hidden, properties grid hidden) — even more breathing
+   room and the title goes serif too for a magazine feel. */
+.notes-reader.reader-mode .bn-editor p,
+.notes-reader.reader-mode .bn-editor ul,
+.notes-reader.reader-mode .bn-editor ol,
+.notes-reader.reader-mode .bn-editor li {
+  font-size: 18px !important;
+  line-height: 1.78 !important;
+}
+
+.bn-editor h2 {
+  font-size: 1.1em !important;
+  font-weight: 700 !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.35em !important;
+  line-height: 1.3 !important;
+  color: var(--text-1) !important;
+  letter-spacing: -0.01em !important;
+}
+
+.bn-editor h3 {
+  font-size: 1em !important;
+  font-weight: 600 !important;
+  margin-top: 1.2em !important;
+  margin-bottom: 0.25em !important;
+  line-height: 1.4 !important;
+  color: var(--text-1) !important;
+  letter-spacing: -0.005em !important;
+}
+
+/* First heading after the properties grid shouldn't have huge top margin */
+.bn-editor > .bn-block-group > .bn-block:first-child h2,
+.bn-editor > .bn-block-group > .bn-block:first-child h3 {
+  margin-top: 0.4em !important;
+}
+
+.bn-editor p, .bn-editor ul, .bn-editor ol, .bn-editor li {
+  font-size: 16.5px !important;
+  line-height: 1.78 !important;
+  margin-top: 0.55em !important;
+  margin-bottom: 0.55em !important;
+  color: var(--text-1) !important;
+  letter-spacing: -0.003em !important;
+}
+
+/* Stronger contrast for body copy in dark mode — easier on the eyes for long reading */
+.dark .bn-editor p,
+.dark .bn-editor ul,
+.dark .bn-editor ol,
+.dark .bn-editor li {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+/* Inline emphasis */
+.bn-editor strong {
+  font-weight: 600 !important;
+  color: var(--text-1) !important;
+}
+
+.bn-editor em {
+  color: var(--text-2) !important;
+}
+
+/* Inline code — readable mono, subtle chip */
+.bn-editor code {
+  font-family: var(--font-mono) !important;
+  font-size: 0.92em !important;
+  padding: 1px 6px !important;
+  border-radius: 4px !important;
+  background: color-mix(in srgb, var(--brand-500) 8%, var(--surface-2)) !important;
+  color: var(--text-1) !important;
+}
+
+/* Restore default code styling INSIDE code-blocks (it's a block, not an inline chip) */
+.bn-editor pre code {
+  padding: 0 !important;
+  background: transparent !important;
+  font-size: 14px !important;
+}
+
+/* Style display math cleanly. We style ONLY KaTeX's own `.katex-display`
+   container — the outer `.pupil-math-display` wrapper is kept invisible so
+   we never get a doubled border or a phantom empty box when the wrapper
+   exists without katex inside. */
+.katex-display {
+  margin: 1.2em 0 !important;
+  padding: 16px 20px !important;
+  background-color: #fafaf9 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  overflow-x: auto !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.01) !important;
+}
+
+.dark .katex-display {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.pupil-math-display {
+  /* Outer wrapper has no chrome of its own — chrome lives on .katex-display. */
+  display: block;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Empty math wrappers (latex never made it to KaTeX) collapse fully. */
+.pupil-math-display:empty {
+  display: none !important;
+}
+
+/* Align inline KaTeX nodes cleanly */
+.katex {
+  font-size: 1.02em !important;
+  line-height: 1.2 !important;
+}
+
+.pupil-math-inline {
+  display: inline;
+  padding: 0 1px;
+  vertical-align: baseline;
+}
+
+/* Native BlockNote Callouts / Key Takeaways styling */
+.bn-block[data-block-type="callout"] {
+  border-left: 4px solid var(--brand-500) !important;
+  background-color: rgba(108, 92, 231, 0.04) !important;
+  border-radius: 0 8px 8px 0 !important;
+  padding: 12px 16px !important;
+  margin: 1.2em 0 !important;
+  border-top: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+}
+
+.dark .bn-block[data-block-type="callout"] {
+  background-color: rgba(139, 126, 240, 0.08) !important;
+  border-left-color: var(--brand-500) !important;
+}
+
+/* Target 💡 takeaway paragraphs via the data-content-type attribute approach */
+.pupil-takeaway-para {
+  border-left: 4px solid var(--brand-500);
+  padding: 12px 16px;
+  margin: 1.2em 0;
+  background: color-mix(in srgb, var(--brand-500) 6%, transparent);
+  border-radius: 0 8px 8px 0;
+  font-size: 14.5px;
+  line-height: 1.625;
+}
+
+/* Notion-style code blocks */
+.bn-block[data-block-type="codeBlock"] pre {
+  background-color: #f7f6f3 !important;
+  border: 1px solid var(--border) !important;
+  border-left: 4px solid var(--brand-500) !important;
+  border-radius: 10px !important;
+  padding: 16px 20px !important;
+  margin: 1.4em 0 !important;
+  overflow-x: auto !important;
+}
+
+.dark .bn-block[data-block-type="codeBlock"] pre {
+  background-color: #18181b !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.bn-block[data-block-type="codeBlock"] code {
+  font-family: var(--font-mono) !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: var(--text-1) !important;
+}
+
+/* Notion-style list spacing */
+.bn-editor [data-block-type="bulletListItem"],
+.bn-editor [data-block-type="numberedListItem"] {
+  margin-top: 3px !important;
+  margin-bottom: 3px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* Notion-style image cards */
+.bn-block[data-block-type="image"] img {
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-1) !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.bn-block[data-block-type="image"] img:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2) !important;
+}
+
+/* Premium table styling */
+table {
+  width: 100%;
+  margin: 1.5em 0;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+th, td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+th {
+  background-color: var(--surface-2);
+  font-weight: 600;
+  color: var(--text-1);
+  border-top: 1px solid var(--border);
+}
+
+tr:hover {
+  background-color: var(--hover);
+}
+
+tr:nth-child(even) {
+  background-color: color-mix(in srgb, var(--surface-2) 20%, transparent);
+}
+
+.dark th {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.dark tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.005);
+}
+
+
+

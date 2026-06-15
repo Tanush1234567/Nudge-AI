@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+backend/.venv/
+backend/venv/
+backend/env/
+backend/yolov8n.pt
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Next.js
+.next/
+frontend/.next/
+
+# Environment files
+.env
+.env.local
+backend/.env
+frontend/.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project references & Build Info
+nudge-prototype/
+*.tsbuildinfo
+

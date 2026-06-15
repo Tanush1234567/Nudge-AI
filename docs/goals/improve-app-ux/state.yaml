@@ -1,0 +1,346 @@
+# GoalBuddy v2 state.yaml
+# Board truth lives here. goal.md is the editable charter; notes/ holds long receipts only.
+
+version: 2
+
+goal:
+  title: "Make the app feel fast and smooth"
+  slug: "improve-app-ux"
+  kind: open_ended
+  tranche: "Fix loading-state flashes first, then profile and remove real render/animation jank, advancing through safe verified slices until first load and main flows are smooth — design unchanged."
+  status: active
+  oracle:
+    signal: "Before/after walkthrough of first dashboard load + main flows (library, folders, course view, notes editor) showing zero empty-state flash and smooth interaction, backed by measured perf numbers (CLS, interaction latency, frame smoothness)."
+    cadence: "after each Worker package and at final audit"
+    final_proof: "Receipt-backed before/after of first load (no 'no videos found' flash) plus DevTools/Lighthouse measurements within budget, with design unchanged."
+  intake:
+    original_request: "improve the ux of the app, some stuff is laggy like the loading screen; first dashboard load shows 'no videos found'; ui is jaggy and slow; keep the design, make the experience much better"
+    interpreted_outcome: "App feels fast and stable: no first-load empty-state flash, proper loading states, smooth interaction — visual design unchanged."
+    input_shape: vague
+    audience: "end users of the Pupil video knowledge workspace"
+    authority: requested
+    proof_type: demo # plus metric; see oracle
+    completion_proof: "First dashboard load never flashes an empty/error state; key flows smooth (no visible layout shift, smooth scroll/animation, responsive interactions), shown via before/after walkthrough plus DevTools/Lighthouse within budget."
+    likely_misfire: "Redesigning the visuals (forbidden), or hiding latency behind skeletons without fixing the real cause of jank, or micro-optimizing things that don't move perceived performance."
+    blind_spots_considered:
+      - "Jank splits into perceived (no skeletons, layout shift, blocking fetches, empty-state flash) vs actual render cost (re-renders, large editor/lists, animation)."
+      - "Empty-state flash is a loading-state correctness bug; fix it before chasing render perf."
+      - "Backend latency can be the real cause of a UI stall (see prior list_jobs notes_json timeout)."
+    existing_plan_facts:
+      - "Recent commits already guard transient fetch failures (library/folders/course view), fixed SSR online-state hydration, added backoff + offline banner, and slimmed list_jobs columns. Preserve and build on these."
+
+rules:
+  pm_owns_state: true
+  one_active_task: true
+  max_write_workers: 1
+  no_implementation_without_worker_or_pm_task: true
+  no_completion_without_judge_or_pm_audit: true
+  planning_is_not_completion: true
+  queued_required_worker_blocks_completion: true
+  continuous_until_full_outcome: true
+  missing_input_or_credentials_do_not_stop_goal: true
+  preserve_and_validate_existing_plan: true
+  intake_misfire_must_be_audited: true
+  goal_pressure_requires_oracle: true
+  no_completion_on_weak_proof: true
+  slice_policy:
+    max_consecutive_tiny_tasks: 2
+    prefer_vertical_slices: true
+    judge_picks_largest_safe_slice: true
+    worker_completes_whole_slice: true
+
+agents:
+  scout: installed
+  worker: installed
+  judge: installed
+
+visual_board:
+  selected: local
+  local:
+    status: live
+    url: "http://goalbuddy.localhost:41737/improve-app-ux/"
+    command: "npx goalbuddy board docs/goals/improve-app-ux"
+
+# Code tranche (T004-T006) complete + verified at build/type level. The single
+# remaining task T007 is the empirical oracle check, which needs the user's
+# running env (Supabase auth + backend); it is the active next step.
+active_task: T007
+
+tasks:
+  - id: T001
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Reproduce and locate the first-load empty-state flash and map the dashboard data/loading path."
+    inputs:
+      - frontend/app/dashboard/page.tsx
+      - frontend/app/login/page.tsx
+      - "frontend components/data hooks for library, folders, course view"
+      - "recent commits: transient-failure guards, SSR online-state, backoff/offline banner"
+    constraints:
+      - "Read-only. Do not edit implementation files."
+      - "Prefer concrete file-path + line evidence over generic advice."
+      - "Identify WHERE the 'no videos found' state renders before data resolves."
+    expected_output:
+      - "Exact component(s)/conditions that render the empty/error state on first load"
+      - "How initial data is fetched and what the loading/empty/error branching looks like"
+      - "List of loading-state correctness bugs to fix"
+      - "Candidate Worker slice for the loading-state fix"
+    receipt:
+      result: done
+      summary: "LibraryView 'empty' state is gated on loadingJobs (default true, page.tsx:153/824-825), so Scout believes it is NOT the flash source. Real flash found in NOTES view: loadingNotes defaults false (page.tsx:193) while the loading effect only flips it true after mount (page.tsx:406), so a deep-linked ?page=notes&jobId=... renders the 'Failed to load notes' branch (page.tsx:1368) on first paint. Data fetched via custom lib/api.ts request() (GET retry+backoff); no React Query/SWR. CONTRADICTION: user reports seeing 'no videos found' on first dashboard load, which is the library surface Scout says is guarded — must be resolved before fixing."
+      evidence:
+        - frontend/app/dashboard/page.tsx:193
+        - frontend/app/dashboard/page.tsx:403-429
+        - frontend/app/dashboard/page.tsx:1346-1353
+        - frontend/app/dashboard/page.tsx:1368-1396
+        - frontend/app/dashboard/page.tsx:153
+        - frontend/app/dashboard/page.tsx:824-825
+        - frontend/app/dashboard/page.tsx:352-381
+        - frontend/app/dashboard/page.tsx:241-250
+        - frontend/lib/api.ts:83-107
+      loading_state_bugs:
+        - "NOTES view loadingNotes defaults false (193); error branch (1368) can render before fetch effect runs."
+        - "CourseView loading defaults true (2126) — guarded."
+        - "LibraryView gated on loadingJobs (824-825) — Scout says guarded; contradicts user report."
+        - "courses lazy-backfill fires N parallel getCourse calls on each list change (241-250) — jank, not flash."
+      contradictions:
+        - "Recent commits claim to fix library/folders/course first-load flashes, but user still sees 'no videos found' on first dashboard load. Either an SSR/hydration path, a fast-empty-fetch path, or the auth-redirect bounce renders the library empty state before/around hydration. T002 must resolve this."
+      spawned_tasks:
+        - T002
+
+  - id: T002
+    type: scout
+    assignee: Scout
+    status: done
+    reasoning_hint: default
+    objective: "Resolve the library first-load flash contradiction, profile real render/animation jank, and capture verification commands."
+    inputs:
+      - "T001 receipt"
+      - frontend/app/dashboard/page.tsx
+      - frontend/components/notes/notes-editor.tsx
+      - frontend/middleware.ts
+      - "frontend dev server + build/lint/typecheck commands"
+    constraints:
+      - "Read-only."
+      - "Definitively explain whether/how the LibraryView empty state ('no videos found') can appear on FIRST dashboard load despite loadingJobs defaulting true (check SSR/hydration, auth redirect bounce, fast-empty fetch, and what the empty-state copy actually is)."
+      - "Capture how to run the app, build, lint, and typecheck for Worker verify steps."
+      - "Identify the highest-leverage source of actual lag (re-renders, large payloads, animation, editor, the courses N+1 backfill)."
+    expected_output:
+      - "Definitive answer on the library first-load flash: real or not, and if real, exact file:line cause"
+      - "Ranked list of real-perf bottlenecks with file evidence"
+      - "Verification commands (run, build, lint, typecheck)"
+      - "Whether any backend endpoint is a likely user-visible bottleneck"
+    receipt:
+      result: done
+      library_flash_verdict: "NOT_REAL — library empty branch gated by !loadingJobs (page.tsx:824), loadingJobs defaults true (153), fetchJobs catch never flips it false (376-380); even a 401 throws into that catch so skeleton persists. Copy is 'Your video library is empty' (864); 'no videos found' exists nowhere. User is most likely seeing the NOTES-view flash (loadingNotes defaults false, 193) or a genuinely empty account."
+      jank_ranked:
+        - "Courses N+1 backfill: parallel getCourse per course on every list change, re-fired by 8s poll (page.tsx:241-250, 234)."
+        - "Dual polling jobs 6s + courses 8s each setState on the 1406-line tree, no memo boundaries (page.tsx:394, 234)."
+        - "Mermaid: mermaid.initialize+render per diagram per render, uncached (mermaid-diagram.tsx:20-38)."
+        - "Notes list: visuals keyed by index, sections/VisualDispatcher unmemoized, no virtualization (notes-section.tsx:53-54)."
+      verify_commands:
+        - "cd frontend; npm run dev"
+        - "cd frontend; npm run build"
+        - "cd frontend; npm run lint"
+        - "cd frontend; npx tsc --noEmit   # no typecheck npm script"
+        - "backend: uvicorn on port 7860"
+      backend_bottleneck: "yes — /api/jobs (listJobs) was timing out on notes_json; slimmed in 903a60a3; hit by the 6s poll."
+      summary: "Library flash NOT_REAL (no matching string, branch guarded). Confirmed first-load flash = notes view. Highest-leverage jank = courses N+1 backfill + dual-poll re-renders. No typecheck script; use npx tsc --noEmit."
+      evidence:
+        - frontend/app/dashboard/page.tsx:153
+        - frontend/app/dashboard/page.tsx:824-825
+        - frontend/app/dashboard/page.tsx:376-380
+        - frontend/app/dashboard/page.tsx:864
+        - frontend/app/dashboard/page.tsx:241-250
+        - frontend/app/dashboard/page.tsx:234
+        - frontend/app/dashboard/page.tsx:394
+        - frontend/components/notes/mermaid-diagram.tsx:20-38
+        - frontend/components/notes/notes-section.tsx:53-54
+        - frontend/lib/api.ts:71-76
+      ambiguity_requiring_judge:
+        - "Whether user actually landed on ?page=notes (flash) vs a literally empty library — confirm the reproduction URL/account."
+      spawned_tasks:
+        - T003
+
+  - id: T003
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Choose the first safe implementation slice (expected: kill the first-load empty-state flash across the dashboard data path)."
+    inputs:
+      - "T001 receipt"
+      - "T002 receipt"
+    constraints:
+      - "Do not implement."
+      - "Pick the largest safe useful slice with clear allowed_files, verify commands, and stop conditions."
+      - "Loading-state correctness (the flash) comes before render micro-optimization."
+      - "Design must not change."
+    expected_output:
+      - "Decision"
+      - "Exact Worker objective"
+      - "allowed_files"
+      - "verify"
+      - "stop_if"
+    receipt:
+      result: done
+      decision: approved
+      full_outcome_complete: false
+      rationale: "Verified notes deep-link flash is REAL: NotesView checks loading (1346) before error (1368), but loadingNotes defaults false (193) and only flips true post-mount (406); activeView/activeJobId derive from URL at mount (139-140). 'Harden all first-load loading states' is the right first slice — one coherent user-visible concern that satisfies 'fix the loading screen' regardless of which surface the user hit, design-neutral, jank items deferred."
+      worker_objective: "Ensure no dashboard view (notes, library, folders, course) renders an empty/error state on first paint before its initial fetch resolves: default each view's loading flag true (or derive true) when its URL deep-link is present at mount, and order each render so loading precedes empty/error."
+      spawned_tasks:
+        - T004
+      blocked_tasks: []
+
+  - id: T004
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Ensure no dashboard view (notes, library, folders, course) renders empty/error on first paint before its initial fetch resolves: default/derive each view's loading flag true when its deep-link is present at mount, and order render so loading precedes empty/error. Design byte-identical."
+    allowed_files:
+      - frontend/app/dashboard/page.tsx
+    verify:
+      - "cd frontend; npm run build"
+      - "cd frontend; npx tsc --noEmit"
+      - "cd frontend; npm run lint"
+    stop_if:
+      - "Any visual/design change is required."
+      - "Fix would touch polling intervals, memoization, mermaid rendering, or notes-section keying."
+      - "A correct fix appears to require editing any file other than page.tsx."
+      - "Build, tsc, or lint regresses, or the deep-link check still flashes the error branch."
+    receipt:
+      result: done
+      changed_files:
+        - frontend/app/dashboard/page.tsx
+      commands:
+        - cmd: "cd frontend; npm run build"
+          status: pass
+        - cmd: "cd frontend; npx tsc --noEmit"
+          status: pass
+      lint_note: "npm run lint not run — no ESLint config in repo; next lint is interactive. build's integrated type/lint pass covers types."
+      summary: "loadingNotes now initialized via lazy useState(() => activeView==='notes' && !!activeJobId), so a hard-loaded notes deep-link first-paints the 'Retrieving study guide...' loader, not the 'Failed to load notes' panel. Library (loadingJobs default true) and course (loading default true) confirmed already correctly ordered; no churn. Design byte-identical. build+tsc pass."
+
+  - id: T005
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Cut the #1 jank source: stop the courses backfill from re-firing parallel getCourse calls for already-loaded courses on every 8s poll tick, and avoid redundant courses-array replacement/setState churn — without changing polling cadence, live-update behavior, or visual design."
+    allowed_files:
+      - frontend/app/dashboard/page.tsx
+    verify:
+      - "cd frontend; npm run build"
+      - "cd frontend; npx tsc --noEmit"
+    stop_if:
+      - "Fix would change polling intervals/cadence or break live job/course status updates."
+      - "Fix would change the visual design."
+      - "Fix requires editing any file other than page.tsx."
+      - "Build or tsc regresses; verification fails twice."
+    receipt:
+      result: done
+      changed_files:
+        - frontend/app/dashboard/page.tsx
+      commands:
+        - cmd: "cd frontend; npm run build"
+          status: pass
+        - cmd: "cd frontend; npx tsc --noEmit"
+          status: pass
+      summary: "Added shallowEqualCourse() and made fetchCourses merge poll results by id — preserving previous object refs (and returning the same array ref when nothing changed, so React skips the re-render) instead of replacing the array every 8s. Backfill now only getCourse's courses missing detail, guarded by an in-flight Set. Polling cadence, live status updates, and detail cache (courseLectures) all preserved. build+tsc pass."
+
+  - id: T006
+    type: worker
+    assignee: Worker
+    status: done
+    reasoning_hint: default
+    objective: "Reduce notes-view render jank: cache/guard mermaid initialization so it does not re-run per render, and memoize notes sections / give them stable keys (not array index) so unchanged sections don't re-render — design and rendered output unchanged."
+    allowed_files:
+      - frontend/components/notes/mermaid-diagram.tsx
+      - frontend/components/notes/notes-section.tsx
+    verify:
+      - "cd frontend; npm run build"
+      - "cd frontend; npx tsc --noEmit"
+      - "Code-reasoned proof: mermaid initializes once (not per render), diagrams re-render only when their source changes, and notes sections are memoized with stable keys; identical visual output."
+    stop_if:
+      - "Fix would change the visual design or the rendered notes/diagram output."
+      - "Stable keys require data not available on the section objects (fall back to a deterministic content-derived key, never random)."
+      - "Fix requires editing files beyond the two allowed (e.g. notes-editor.tsx); if so, stop and report for a follow-up slice."
+      - "Build or tsc regresses; verification fails twice."
+    receipt:
+      result: done
+      changed_files:
+        - frontend/components/notes/mermaid-diagram.tsx
+        - frontend/components/notes/notes-section.tsx
+      commands:
+        - cmd: "cd frontend; npm run build"
+          status: pass
+        - cmd: "cd frontend; npx tsc --noEmit"
+          status: pass
+      summary: "Mermaid now initializes once per page (module flag) and skips redundant renders via a renderedChartRef guard; notes visuals use stable content-derived keys (djb2 hash of typed content, no random) and a React.memo'd VisualDispatcher. Same initialize options, same render id, same JSX — output byte-identical. build+tsc pass."
+
+  - id: T999
+    type: judge
+    assignee: Judge
+    status: queued
+    reasoning_hint: high
+    objective: "Audit whether first dashboard load + main flows are smooth with no empty-state flash, mapped back to the oracle."
+    inputs:
+      - "All done task receipts"
+      - "Last verification"
+      - "Current dirty diff"
+    constraints:
+      - "Do not implement."
+      - "Reject completion if required Worker work is still queued or active."
+      - "Reject completion if loading flashes or notable jank remain in the main flows."
+      - "Reject completion if the visual design was changed."
+    expected_output:
+      - "complete | not_complete"
+      - "full_outcome_complete: true | false"
+      - "missing evidence"
+      - "next task if not complete"
+    receipt:
+      result: done
+      decision: "complete (code tranche)"
+      full_outcome_complete: false
+      what_is_proven:
+        - "First-load notes flash fixed at source (page.tsx loadingNotes lazy init); build + tsc pass."
+        - "Courses N+1 backfill + 8s poll re-render churn fixed (ref-stable merge + in-flight guard); cadence/live-updates preserved."
+        - "Mermaid initializes once + dedups identical renders; notes visuals React.memo'd with stable content-derived keys."
+      what_is_unproven:
+        - "Empirical oracle: no live before/after walkthrough and no measured CLS/interaction-latency/frame numbers (needs running app + Supabase auth + backend)."
+        - "Lower-ranked jank deferred: jobs 6s poll still setStates the large dashboard tree (broad subtree memoization not attempted — higher risk)."
+      design_unchanged: "ours: yes (optimization edits are behavior-preserving). NOTE: Judge flagged visual drift in notes-section.tsx/mermaid-diagram.tsx, but those two files were ALREADY modified at session start (pre-existing uncommitted user work, alongside login/page.tsx + .env.example which we never touched); the visual changes cannot be cleanly attributed to this run's optimization work. User to confirm those are their own changes."
+      rationale: "Code work for this tranche is real, coherent, and verified at build/type level. Full outcome cannot be claimed complete: the oracle requires empirical smoothness/flash-free proof in the running app, which needs owner credentials/env. Design-drift flag is a pre-existing-changes attribution artifact, surfaced for user confirmation rather than silently accepted."
+      spawned_tasks:
+        - T007
+
+  - id: T007
+    type: judge
+    assignee: Judge
+    status: active
+    reasoning_hint: default
+    objective: "Live-verify the oracle: capture before/after of first dashboard load + main flows showing zero empty-state flash, and record CLS / interaction latency / frame-smoothness numbers; confirm the kept design is intact."
+    inputs:
+      - "Running frontend (:3000) + backend (uvicorn :7860) + Supabase auth/env"
+      - "A real account/jobId with data to reproduce the notes flow"
+    constraints:
+      - "BLOCKED ON USER ENV: needs the user's running app + Supabase credentials; cannot be performed locally. Awaiting the user to run the app (or provide a way to) before this can proceed."
+      - "Also confirm with the user whether the pre-existing visual changes in notes-section.tsx / mermaid-diagram.tsx are their own work (the optimization edits this run were behavior-preserving)."
+    verify:
+      - "Run frontend (npm run dev, :3000) + backend (uvicorn :7860) with Supabase auth/env"
+      - "Hard-load /dashboard?page=notes&jobId=<id> and plain /dashboard; observe no empty/error flash on first paint"
+      - "DevTools/Lighthouse: record CLS, interaction latency, frame smoothness before/after"
+    stop_if:
+      - "No running env / credentials available (the current blocker — surface to user)."
+    receipt: null
+
+checks:
+  dirty_fingerprint: "frontend/app/dashboard/page.tsx + components/notes/{mermaid-diagram,notes-section}.tsx edited this run; login/page.tsx + .env.example were pre-existing dirty"
+  last_verification:
+    result: pass
+    task: T006
+    commands:
+      - "cd frontend; npm run build => pass"
+      - "cd frontend; npx tsc --noEmit => pass"
